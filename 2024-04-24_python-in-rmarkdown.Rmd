@@ -1,0 +1,67 @@
+---
+title: "Python in RMarkdown"
+output: html_document
+date: "2024-04-24"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+here::i_am("IFFRUG.Rproj")
+ggplot2::theme_set(ggplot2::theme_bw())
+options(tidyverse.quiet = TRUE)
+
+library(reticulate)
+use_condaenv("iffrug")
+```
+
+```{python}
+# python
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+t = np.arange(0.0, 2.0, 0.01)
+s = 1 + np.sin(2*np.pi*t)
+plt.plot(t,s)
+plt.xlabel('time (s)')
+plt.ylabel('voltage (mV)')
+plt.grid(True)
+plt.show()
+```
+
+```{python}
+# python
+
+import pandas as pd
+
+flights = pd.read_csv('flights.csv')
+flights = flights[flights['dest'] == 'ORD']
+flights = flights[['carrier', 'dep_delay', 'arr_delay']]
+flights = flights.dropna()
+```
+
+```{r, fig.width=7, fig.height=3}
+# r
+
+library(ggplot2)
+
+ggplot(py$flights, aes(carrier, arr_delay)) + geom_point() + geom_jitter()
+```
+
+```{r}
+# r
+
+library(tidyverse)
+
+flights <- read_csv("flights.csv", show_col_types = FALSE) %>%
+  filter(dest == "ORD") %>%
+  select(carrier, dep_delay, arr_delay) %>%
+  na.omit()
+```
+
+```{python}
+# python
+
+print(r.flights.head())
+```
+

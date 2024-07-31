@@ -1,0 +1,994 @@
+---
+title: "Blasphemy: Running Python in RStudio"
+subtitle: "IFFRUG 2024-04-29"
+author: "Jennifer Knack | Probiotic Development"
+format:
+  revealjs:
+    theme: dark
+    logo: int_iff_pos_clr_rgb.png
+    footer: "Internal"
+    show-slide-number: all
+    code-overflow: wrap
+    embed-resources: true
+    reference-location: document
+    footnotes-hover: true
+    code-fold: false
+include-in-header: 
+  text: |
+    <style>
+      .custom-small table {
+        font-size: .5em
+      }
+    </style>
+---
+
+## Agenda
+
+-   Why I use RStudio as my Python IDE
+
+. . .
+
+-   Setup:
+    -   How I do Python install and package management
+    -   Setting up RStudio for Python use
+
+## Agenda
+
+-   **reticulate**
+    -   Environments
+    -   Interacting with Python from R
+    -   Type conversions
+
+# Why use RStudio for Python?
+
+## 1. I don't like Jupyter Notebooks
+
+![And it's not just me.](arrested-development-david-cross.gif)
+
+## 1a. Hidden states hinder reproduciblity
+
+Cells can be run in any order, any number of times.
+
+. . .
+
+According to one study[^1], [73% of all Jupyter notebooks are not reproducible with straightforward approaches.]{.class style="color:red"}
+
+[^1]: https://lilicoding.github.io/papers/wang2020assessing.pdf
+
+. . .
+
+IMO, if I can't run a notebook from start to end and get the same result as you, what's the point?
+
+## 1b. Version control is nearly impossible
+
+![Jupyter notebooks are stored as single-line JSON files.](ipynb_rawcode.png)
+
+------------------------------------------------------------------------
+
+There are two major implications of this:
+
+. . .
+
+- Merging branches with `git` versioning nearly always breaks
+  - `git` version control works on a line-by-line basis
+
+. . .
+
+- Visualizing and understanding differences between versions is an impossible task
+
+. . .
+
+(I know there are workarounds for this. They're either tedious and horrible, or they're just conversion to raw code or markdown. Don't \@ me.)
+
+## Other reasons I don't like Jupyter Notebooks:
+
+. . .
+
+1c. No linting, no style help, no IDE integration
+
+. . .
+
+1d. Test-driven development is very difficult
+
+. . .
+
+1e. Jupyter notebooks don't scale well with big data
+
+## Other people talking about why they don't use Jupyter Notebooks
+
+[Joel Grus' presentation to JupyterCon 2018](https://docs.google.com/presentation/d/1n2RlMdmv1p25Xy5thJUhkKGvjtV-dkAIsUXP-AL4ffI/edit#slide=id.g362da58057_0_1)
+
+[Agrover112's "A Rant On Why I Despise Jupyter Notebooks"](https://medium.com/codex/an-honest-rant-on-why-i-despise-jupyter-notebooks-6b631334ce19)
+
+[Alexander Mueller's "5 reasons why jupyter notebooks suck"](https://towardsdatascience.com/5-reasons-why-jupyter-notebooks-suck-4dc201e27086)
+
+Just ask Google -- it will provide you with lots more.
+
+## 2. RStudio is *objectively* the best IDE {.smaller}
+
+-   easy GUI with console and terminal windows
+-   easy, integrated package management (for R)
+-   easy, integrated report/presentation generation via Rmarkdown or Quarto
+-   `git` integration
+-   easily view environment objects and run history
+-   linting, syntax help, and tab-completion all built in
+-   easily navigate and view files and set working directory
+-   plot view and help windows
+
+::: aside
+Don't \@ me!
+:::
+
+## "But why not just use VSCode?"
+
+. . .
+
+Because I don't want to.
+
+![](diva-girl.gif){fig-align="center"}
+
+. . .
+
+I like (and more importantly, ***know***) RStudio. I also don't use Python enough to bother learning VSCode.
+
+# Setup
+
+## Python install and package management
+
+. . .
+
+::: {.callout-important title="DANGER"}
+*Do NOT use Anaconda.*
+:::
+
+. . .
+
+I use `mamba`[^2] for package managment, which works pretty much just like `conda`, except it solves the environment much more quickly because it uses `libsolv` C library instead of Python to solve dependencies.
+
+[^2]: https://mamba.readthedocs.io/en/latest/index.html
+
+. . .
+
+It runs on almost all OS flavors and is compatible with all `conda` packages.
+
+## `mamba` (and Python) install
+
+The `mamba` folks highly suggest using the Miniforge[^3] Python distro. Just follow the installation instructions.
+
+[^3]: https://github.com/conda-forge/miniforge
+
+::: callout-note
+You *do not* need admin rights if you're just installing for "Just Me."
+:::
+
+## Post-install:
+
+. . .
+
+Ensure that none of the Anaconda default channels (`pkgs/main`, `pkgs/r`/`R`, `msys2`, or `defaults`) are in your channel config
+
+. . .
+
+-   Do this instead in your `~/.condarc` file:
+
+```         
+channels:
+  - conda-forge
+  - nodefaults
+```
+
+. . .
+
+-   Confirm your channels by running `mamba info`
+
+## Post-install:
+
+::: callout-important
+Do not install any other packages into the `base` environment
+:::
+
+. . .
+
+Installing packages into the base environment can cause `mamba` (or `conda`) to fail.
+
+. . .
+
+Work only in environments you create:
+
+``` bash
+mamba create -n nameofmyenv <list of packages>
+mamba activate nameofmyenv
+```
+
+## Package management
+
+I use `mamba` to do all my Python package management.
+
+``` bash
+mamba activate nameofmyenv
+mamba install numpy
+mamba update --all
+```
+
+. . .
+
+There are utilities to install and manage packages and environments in RStudio[^4] but I won't cover it here.
+
+[^4]: https://rstudio.github.io/reticulate/articles/python_packages.html
+
+## Setting up RStudio to run Python
+
+. . .
+
+1.  Tell RStudio where you installed Python
+
+. . .
+
+Go to **Tools -\> Global Options**
+
+## Setting up RStudio to run Python
+
+![Enter the path to the python interpreter in your **base** environment](rstudio_python_globalopts.png)
+
+## Setting up RStudio to run Python
+
+2.  Install the **reticulate** package
+
+``` r
+install.packages("reticulate")
+```
+
+. . .
+
+**reticulate**[^5] is a Tidyverse package containing tools for interoperability between Python and R.
+
+[^5]: https://rstudio.github.io/reticulate/
+
+![](reticulated_python.png){width="300" fig-align="center"}
+
+# **reticulate**
+
+## What does **reticulate** do?[^6]
+
+[^6]: https://rstudio.github.io/reticulate/articles/calling_python.html
+
+. . .
+
+1.  Allows calling Python from R in multiple ways including from RMarkdown/Quarto, sourcing Python scripts, importing Python modules, and using Python interactively within an R session
+
+. . .
+
+2.  Translates between R and Python objects (e.g., between R and Pandas data frames, or between R matrices and NumPy arrays)
+
+. . .
+
+3.  Provides flexible binding to different versions of Python including virtual environments and Conda environments
+
+## A note from Posit about the philosophy behind Python tools in Rstudio
+
+> These tools are not intended for standalone Python work but rather explicitly aimed at the *integration of Python into R projects* (and as such are closely tied to the reticulate package).
+
+They "strongly suggest" using one of the IDEs available for doing data science in Python for Python-only projects.[^7]
+
+[^7]: https://rstudio.github.io/reticulate/articles/rstudio_ide.html
+
+## What does **reticulate** do?
+
+::: {.class style="color:grey"}
+
+1.  Allows calling Python from R in multiple ways including from RMarkdown/Quarto, sourcing Python scripts, importing Python modules, and using Python interactively within an R session
+
+2.  Translates between R and Python objects (e.g., between R and Pandas data frames, or between R matrices and NumPy arrays)
+:::
+
+3.  Provides flexible binding to different versions of Python including virtual environments and Conda environments
+
+## Set your environment
+
+First thing you *always* want to do is set your environment:
+
+```{r}
+#| echo: true
+#| warning: true
+
+library(reticulate)
+use_condaenv("iffrug")
+```
+
+. . .
+
+Do this whether you're working interactively, calling scripts, or authoring reports.
+
+. . .
+
+There is also `use_python()` that allows you to specify an alternative version of python other than the one you set in your global options, or `use_virtualenv()` to set a virtual environment instead of a conda environment.
+
+## What does **reticulate** do?
+
+1.  Allows calling Python from R in multiple ways including from RMarkdown/Quarto, sourcing Python scripts, importing Python modules, and using Python interactively within an R session
+
+::: {.class style="color:grey"}
+
+2.  Translates between R and Python objects (e.g., between R and Pandas data frames, or between R matrices and NumPy arrays)
+
+
+3.  Provides flexible binding to different versions of Python including virtual environments and Conda environments
+
+:::
+
+## The `py` object
+
+When you call `library(reticulate)`, it creates the `py` object in the **reticulate** package environment.
+
+. . .
+
+It is the bridge between R and Python, through which you can run Python code and interact with Python objects.
+
+. . .
+
+The most common way you will interact with it is to access any Python object from the R environment using the `$` operator, e.g., `py$x`.
+
+. . .
+
+::: {.callout-important}
+*Always* call `library(reticulate)` or you won't be able to access the `py` object!
+:::
+
+## Importing modules
+
+`reticulate::import()` can be used to import any installed Python module into your R environment.
+
+```{r}
+#| echo: true
+#| warning: true
+
+os <- import("os")
+```
+
+. . .
+
+Then you can call any function from that module in R using `$`.
+
+```{r}
+#| echo: true
+#| warning: true
+
+os$listdir(".") |> head()
+```
+
+. . .
+
+If you'd like to access built in Python functions, use `import_builtins()`.
+
+```{r}
+#| echo: true
+#| warning: true
+
+builtins <- import_builtins()
+builtins$print('Hello, World!')
+```
+
+## Sourcing scripts
+
+Let's say I have a Python script that defines a function:
+
+```python
+def add(x,y):
+  return x + y
+```
+
+If I'd like to use that function in R, I can source it using `source_python()`.
+
+```{r}
+#| echo: true
+#| warning: true
+
+source_python('add.py')
+add(5,10)
+```
+
+## Executing code
+
+Let's say my collaborator wrote a Python script for processing some raw data.  I'd like to work with the processed data in R, but my collaborator only provided me with the raw data and the script.
+
+---
+
+I can use `py_run_string()` and `py_run_file()` to process the data, and then access any objects created into the Python main module using the `py` object exported by **reticulate**:
+
+```{r}
+#| echo: true
+#| warning: true
+
+# Set the Python variable pointing to the raw data file
+py_run_string("file = 'rawdata.csv'")
+
+# run the processing script, which takes the file argument
+py_run_file("process_raw_data.py")
+
+# access the resulting df
+py$df
+```
+
+## Working in RMarkdown^[https://rstudio.github.io/reticulate/articles/r_markdown.html]
+
+**reticulate** includes a Python engine for RMarkdown, and **knitr** v 1.18 and higher uses this engine by default.
+
+. . .
+
+Set your environment in your setup chunk:
+
+![](rmarkdown_setupchunk_reticulate.png){fig-align="center"}
+
+::: {.callout-important}
+*Always* call `library(reticulate)` or you won't be able to access the `py` object!
+:::
+
+---
+
+Then you can start inserting Python chunks just like you would R chunks, and **knitr** will knit everything together:
+
+![](rmarkdown_pychunk.png){fig-align="center"}
+
+---
+
+Just like when working interactively, you can access objects created in Python chunks in R by using the `py` object:
+
+![](rmarkdown_py2r.png){fig-align="center"}
+
+---
+
+And you can access objects created in R chunks in Python by using the `r` object:
+
+![](rmarkdown_r2py.png){fig-align="center"}
+
+## Working in Quarto
+
+Quarto provides all the support for Python that RMarkdown does, plus support for Jupyter:
+
+. . .
+
+- Quarto supports rendering with the Jupyter kernel in addition to **knitr** and **reticulate** -- just put `jupyter: python3` in your YAML header and make sure the paths to Python and Jupyter are in your `PATH`.
+
+---
+
+- You can also provide a full `kernelspec` in your YAML:
+```yaml
+---
+title: "My Document"
+jupyter:
+  kernelspec:
+    name: xpython
+    language: "python"
+    display_name: "Python 3.7 (XPython)"
+---
+```
+
+. . .
+
+- Because it can use the Jupyter kernel, Quarto CLI can render Jupyter notebooks too:
+```bash
+quarto render document.ipynb
+```
+There is other support for Python from the Quarto CLI as well, plus a VSCode Quarto plugin.^[https://quarto.org/docs/computations/python.html]
+
+## What does **reticulate** do?
+
+::: {.class style="color:grey"}
+1.  Allows calling Python from R in multiple ways including from RMarkdown/Quarto, sourcing Python scripts, importing Python modules, and using Python interactively within an R session
+:::
+
+2.  Translates between R and Python objects (e.g., between R and Pandas data frames, or between R matrices and NumPy arrays)
+
+::: {.class style="color:grey"}
+3.  Provides flexible binding to different versions of Python including virtual environments and Conda environments
+:::
+
+## Type conversions
+
+When calling into Python, R data types are automatically converted to their equivalent Python types.
+
+. . .
+
+When values are returned from Python to R they are converted back to R types.^[https://rstudio.github.io/reticulate/articles/calling_python.html#type-conversions]
+
+. . .
+
+::: {.custom-small}
+
+| R                      | Python            | Examples                                         |
+|:-----------------------|:------------------|:-------------------------------------------------|
+| Single-element vector  | Scalar            | `1`, `1L`, `TRUE`, `"foo"`                       |
+| Multi-element vector   | List              | `c(1.0, 2.0, 3.0)`, `c(1L, 2L, 3L)`              |
+| List of multiple types | Tuple             | `list(1L, TRUE, "foo")`                          |
+| Named list             | Dict              | `list(a = 1L, b = 2.0)`, `dict(x = x_data)`      |
+| Matrix/Array           | NumPy ndarray     | `matrix(c(1,2,3,4), nrow = 2, ncol = 2)`         |
+| Data Frame             | Pandas Dataframe  | `data.frame(x = c(1,2,3), y = c("a", "b", "c"))` |
+| Function               | Python function   | `function(x) x + 1`                              |
+| Raw                    | Python bytearray  | `as.raw(c(1:10))`                                |
+| NULL, TRUE, FALSE      | None, True, False | `NULL`, `TRUE`, `FALSE`                          |
+
+:::
+
+## More on object conversion
+
+The automatic conversion between R types and Python types works well in most cases, but sometimes you might want more control over the conversions.
+
+## Controling when conversion happens
+
+If you'd like to work directly with Python objects by default you can pass `convert = FALSE` to the `import()` function.
+
+```{r}
+#| echo: true
+#| warning: true
+
+# import numpy and specify no automatic Python to R conversion
+np <- import("numpy", convert = FALSE)
+
+# do some array manipulations with NumPy
+a <- np$array(c(1:4))
+(sum_np <- a$cumsum())
+
+# what is sum?
+class(sum_np)
+```
+
+---
+
+Then when you're done working with the object in Python, you can convert it to an R object explicitly with `py_to_r()`.
+
+```{r}
+#| echo: true
+#| warning: true
+
+# convert to R explicitly at the end and print object
+(sum_r <- py_to_r(sum_np))
+
+# what is sum_r?
+class(sum_r)
+```
+
+## Defining the conversion
+
+Numeric types are different between R and Python.  For example, `42` in R is a float, while in Python it's an integer.
+
+If you want to explicitly define a number as an integer in R so that it's passed as such to Python, use the `L` suffix:
+
+```{r}
+#| echo: true
+#| warning: true
+
+class(42)
+class(42L)
+```
+
+---
+
+If a Python API requires a list but you're only passing it a single element, you can wrap it in base `list()`:
+
+```r
+foo$bar(indexes = list(42L))
+```
+
+. . .
+
+Similarly, if the Python API wants a `tuple`, you can use `reticulate::tuple()`:
+
+```r
+tuple("a", "b", "c")
+```
+
+. . .
+
+And if the Python API wants a dictionary, you can use `reticulate::dict()`:
+
+```r
+dict(foo = "bar", index = 42L)
+```
+
+## Indices
+
+Python uses 0-based indices for collections:
+
+```{r}
+#| echo: true
+#| warning: true
+
+sum_np[0L]
+```
+
+while R uses 1-based indices:
+
+```{r}
+#| echo: true
+#| warning: true
+
+sum_r[1]
+```
+
+::: {.callout-note}
+
+Notice the need to explicitly use an integer when slicing the Python object
+
+:::
+
+---
+
+Python indices are ***non***-inclusive for the end range, while R indices are:
+
+```{r}
+#| echo: true
+#| warning: true
+
+sum_np[2L:4L]
+sum_r[2:4]
+```
+
+. . .
+
+And negative indexing in Python counts from the ***end*** of the container, while in R it removes that index:
+
+```{r}
+#| echo: true
+#| warning: true
+
+sum_np[-1L]
+sum_r[-1]
+```
+
+
+## Important points about arrays^[https://rstudio.github.io/reticulate/articles/arrays.html]
+
+R and Python represent arrays and matrices in memory differently:
+
+- R only supports column-major order (FORTRAN-style)
+- NumPy supports both column-major and row-major (C-style) order, but defaults to row-major
+
+---
+
+The most important thing to remember about this is that
+
+**R and Python print arrays differently.**
+
+. . .
+
+These are the exact same array:
+
+:::: {.columns}
+::: {.column width="60%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+(x <- np$arange(1, 9)$reshape(2L, 2L, 2L))
+```
+
+:::
+
+::: {.column width="40%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+(y <- py_to_r(x))
+```
+
+:::
+::::
+
+::: {.aside}
+See appendix for more on porting arrays between R and Python
+:::
+
+## Sparse matrices
+
+**reticulate** supports the conversion of sparse matrices created by the **Matrix** R package to and from SciPy CSC matrices.^[https://rstudio.github.io/reticulate/articles/calling_python.html#sparse-matrices]
+
+. . .
+
+I tried to make an example but working out the dependencies for `scipy.sparse` was way too much work.
+
+. . .
+
+<https://rstudio.github.io/reticulate/articles/python_dependencies.html> may have been helpful but I didn't care enough.
+
+## Important points on data frames
+
+As mentioned earlier, R data frames can be automatically converted to and from Pandas data frames.  By default, columns are converted using the same rules governing R array <=> NumPy array conversion, with a couple extensions:
+
+- R factors <=> Python categorical variables
+- R POSIXt times <=> NumPy array with dtype=`datetime64[ns]`
+
+## Important points on data frames
+
+If the R data frame has row names, the generated Pandas data frame will be re-indexed using those row names, and vice versa.
+
+. . .
+
+If a Pandas data frame has a `DatetimeIndex`, it is converted to character vectors as R only supports character row names.
+
+## Using Pandas nullable data types
+
+Pandas out of the box handles `NA`s differently than R:
+
+:::: {.columns}
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+(df <- data.frame(
+  int = c(NA, 1:4),
+  num = c(NA, rnorm(4)),
+  lgl = c(NA, rep(c(TRUE, FALSE), 2)),
+  string = c(NA, letters[1:4])
+))
+```
+
+:::
+
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+r_to_py(df)
+```
+
+:::
+::::
+
+---
+
+However, Pandas has experimental support for nullable data types (represented by `pd.NA`), but you have to enable it first:
+
+```{r}
+#| echo: true
+#| warning: true
+
+# tell Pandas to use NAs
+options(reticulate.pandas_use_nullable_dtypes = TRUE)
+
+r_to_py(df)
+```
+
+## For advanced Python users
+
+For advanced Python users, there's more documentation on
+
+- Contexts
+- Iterators
+- Functions
+- Creating high-level R interfaces for Python libraries
+
+Check out <https://rstudio.github.io/reticulate/articles/calling_python.html> for deets.
+
+## Access to Python help from R
+
+You can print documentation on any Python object using `py_help()`:
+
+```r
+py_help(os$chdir)
+```
+
+This will open a text document outside of RStudio:
+
+```
+Help on built-in function chdir in module nt:
+
+chdir(path)
+    Change the current working directory to the specified path.
+
+    path may always be specified as a string.
+    On some platforms, path may also be specified as an open file descriptor.
+      If this functionality is unavailable, using it raises an exception.
+```
+
+There is also this [excellent article](https://rstudio.github.io/reticulate/articles/python_primer.html) aimed at R users who are new to Python.
+
+# Appendix
+
+## More on arrays
+
+- Dense R arrays are presented to Python as column-major NumPy arrays (FORTRAN-style).
+- *All* NumPy arrays (column-major, row-major, or otherwise) are presented to R as column-major arrays, since that's all R can understand.
+- R arrays are only copied to Python when they need to be, otherwise data are shared.
+- NumPy arrays are *always* copied when moved into R arrays.  This can sometimes lead to multiple copies of any one array in memory at one time.
+
+---
+
+Remember this 2x2x2 array?
+
+:::: {.columns}
+::: {.column width="60%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+(x <- np$arange(1, 9)$reshape(2L, 2L, 2L))
+```
+
+:::
+
+::: {.column width="40%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+(y <- py_to_r(x))
+```
+
+:::
+::::
+
+. . .
+
+These are the exact same array, so why do they look different?
+
+---
+
+Python groups by the first index when printing, while R groups by the last index:
+
+:::: {.columns}
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+x
+x[0L,,]
+x[,,0L]
+```
+
+:::
+
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+y
+y[1,,]
+y[,,1]
+```
+
+:::
+::::
+
+## What about arrays from R to Python?
+
+In the previous example I created an array in Python and ported it to R.  What about the other way around?
+
+:::: {.columns}
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+(v <- array(1:24, c(4, 3, 2)))
+```
+
+:::
+
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+(w <- np$array(v))
+```
+
+:::
+::::
+
+---
+
+The NumPy array will be created using column-major ordering:
+
+```{r}
+#| echo: true
+#| warning: true
+
+w$flags
+```
+
+Remember:
+
+- `F` for "FORTRAN" (column-major order)
+- `C` for "C" (row-major order)
+
+---
+
+You can always create NumPy arrays in column-major order by passing the `"F"` flag:
+
+:::: {.columns}
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+np$reshape(np$arange(1, 25), c(4L, 3L, 2L))
+```
+
+:::
+
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+np$reshape(np$arange(1, 25), c(4L, 3L, 2L), "F")
+```
+
+:::
+::::
+
+. . .
+
+You *can* rearrange R arrays into row-major order, but it's gross.
+
+## Reshaping arrays
+
+The R `dim()` function is used to reshape arrays in R.  This works by changing the `dim` attribute of the array, effectively re-interpreting the array indices using column-major semantics.
+
+. . .
+
+Remember though that NumPy uses row-major semantics by default; hence, the `reshape` method uses row-major semantics.
+
+```{r}
+#| echo: true
+#| warning: true
+
+# NumPy reshape uses row-major semantics
+np$reshape(np$arange(1,5), c(2L,2L))
+```
+
+So if you're mixing R and Python code, you may get inconsistent results.
+
+---
+
+To overcome this, use `reticulate::array_reshape()` to reshape R arrays using row-major semantics.
+
+:::: {.columns}
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+# make an array from a vector
+# of 4 elements:
+u <- 1:4
+
+# dim() uses
+# column-major semantics
+dim(u) <- c(2,2)
+u
+```
+
+:::
+
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+# array_reshape() uses
+# row-major semantics
+array_reshape(1:4, c(2,2))
+```
+
+:::
+::::
