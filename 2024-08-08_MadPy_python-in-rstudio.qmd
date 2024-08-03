@@ -1,11 +1,8 @@
 ---
-title: "Blasphemy: Running Python in RStudio"
-subtitle: "MadPy 2024-08-08"
-author: "Jennifer Knack"
 format:
   revealjs:
     theme: dark
-    logo: madpy-logo.svg
+    logo: assets/madpy-logo.svg
     slide-number: c/t
     show-slide-number: all
     navigation-mode: linear
@@ -14,6 +11,7 @@ format:
     reference-location: document
     footnotes-hover: true
     code-fold: false
+    footer: "2024-08-08"
 include-in-header: 
   text: |
     <style>
@@ -23,7 +21,15 @@ include-in-header:
     </style>
 ---
 
+## {background-image="assets/2024-08-08-reticulate-when-R-and-Python-play-nice-with-banner-1200x630.png" background-size="contain"}
+
 ## Agenda
+
+. . .
+
+-   Me
+
+. . .
 
 -   RStudio
 
@@ -39,6 +45,24 @@ include-in-header:
     -   Environments
     -   Interacting with Python from R
     -   Type conversions
+
+# About Me
+
+## Who is Jennifer Knack?
+
+![](assets/IMG_20240731_153417~2.jpg){.absolute top=75 right=0 width=300}
+
+![](assets/IMG_20240308_110429372_HDR.jpg){.absolute bottom=0 left=0 width=500}
+
+![](assets/20171226_100822.jpg){.absolute bottom=25 right=0 width=500}
+
+![](assets/int_iff_pos_clr_rgb.png){.absolute top=75 left=0 width=100}
+
+![](assets/umd-llo.png){.absolute top=75 left=160 width=100}
+
+![](assets/uw-logo-horizontal-color-reverse-web-digital.png){.absolute top=175 left=0 width=300}
+
+![](assets/IMG_20230430_145236380_HDR.jpg){.absolute top=75 left=325 width=400}
 
 # Quick aside: RStudio
 
@@ -86,7 +110,7 @@ Don't \@ me!
 
 Because I don't want to.
 
-![](diva-girl.gif){fig-align="center"}
+![](assets/diva-girl.gif){fig-align="center"}
 
 . . .
 
@@ -122,7 +146,7 @@ Go to **Tools -\> Global Options**
 
 ## Setting up RStudio to run Python
 
-![Enter the path to the python interpreter in your **base** environment](rstudio_python_globalopts.png)
+![Enter the path to the python interpreter in your **base** environment](assets/rstudio_python_globalopts.png)
 
 ## Setting up RStudio to run Python
 
@@ -138,7 +162,7 @@ install.packages("reticulate")
 
 [^5]: https://rstudio.github.io/reticulate/
 
-![](reticulated_python.png){width="300" fig-align="center"}
+![](assets/reticulated_python.png){width="300" fig-align="center"}
 
 # **reticulate**
 
@@ -294,7 +318,7 @@ I can use `py_run_string()` and `py_run_file()` to process the data, and then ac
 #| warning: true
 
 # Set the Python variable pointing to the raw data file
-py_run_string("file = 'rawdata.csv'")
+py_run_string("file = 'extdata/rawdata.csv'")
 
 # run the processing script, which takes the file argument
 py_run_file("process_raw_data.py")
@@ -311,7 +335,7 @@ py$df
 
 Set your environment in your setup chunk:
 
-![](rmarkdown_setupchunk_reticulate.png){fig-align="center"}
+![](assets/rmarkdown_setupchunk_reticulate.png){fig-align="center"}
 
 ::: {.callout-important}
 *Always* call `library(reticulate)` or you won't be able to access the `py` object!
@@ -321,19 +345,19 @@ Set your environment in your setup chunk:
 
 Then you can start inserting Python chunks just like you would R chunks, and **knitr** will knit everything together:
 
-![](rmarkdown_pychunk.png){fig-align="center"}
+![](assets/rmarkdown_pychunk.png){fig-align="center"}
 
 ---
 
 Just like when working interactively, you can access objects created in Python chunks in R by using the `py` object:
 
-![](rmarkdown_py2r.png){fig-align="center"}
+![](assets/rmarkdown_py2r.png){fig-align="center"}
 
 ---
 
 And you can access objects created in R chunks in Python by using the `r` object:
 
-![](rmarkdown_r2py.png){fig-align="center"}
+![](assets/rmarkdown_r2py.png){fig-align="center"}
 
 ## Working in Quarto
 
@@ -886,3 +910,32 @@ array_reshape(1:4, c(2,2))
 
 :::
 ::::
+
+# Session info
+
+## R
+
+```{r}
+#| echo: true
+#| warning: true
+
+sessionInfo()
+```
+
+## Python
+
+```{r}
+#| echo: true
+#| warning: true
+
+py_config()
+```
+
+## Python
+
+```{r}
+#| echo: true
+#| warning: true
+ 
+py_list_packages("iffrug")
+```
