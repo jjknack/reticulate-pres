@@ -45,6 +45,8 @@ include-in-header:
     -   Environments
     -   Interacting with Python from R
     -   Type conversions
+    
+-   Live demo?
 
 # About Me
 
@@ -250,6 +252,20 @@ The most common way you will interact with it is to access any Python object fro
 *Always* call `library(reticulate)` or you won't be able to access the `py` object!
 :::
 
+## The `r` object
+
+Similarly, **reticulate** creates the `r` object in the Python environment it creates.  Through it, you can access R objects in the Python environment.
+
+. . .
+
+You can access R objects using the `.` operator, e.g., `r.x`.
+
+::: {.callout-note}
+
+Examples of using the `py` and `r` objects are found further in this presentation
+
+:::
+
 ## Importing modules
 
 `reticulate::import()` can be used to import any installed Python module into your R environment.
@@ -311,7 +327,7 @@ Let's say my collaborator wrote a Python script for processing some raw data.  I
 
 . . .
 
-I know the script requires a variable `file` that is a character string pointing to the path of the raw data.
+I know the script requires a variable `file` that is a character string pointing to the path of the raw data, and outputs a Pandas data frame called `df`.
 
 ---
 
@@ -392,6 +408,24 @@ jupyter:
 quarto render document.ipynb
 ```
 There is other support for Python from the Quarto CLI as well, plus a VSCode Quarto plugin.^[https://quarto.org/docs/computations/python.html]
+
+## Working with Python interactively
+
+If you want to work with Python interactively, you can call `repl_python()` to initiate a Python REPL embedded in the R console.
+
+. . .
+
+You can use the `py` and `r` objects to access objects between environments.
+
+::: {.aside}
+
+REPL stands for "Read-Eval-Print Loop"
+
+:::
+
+---
+
+![](assets/repl_python.png){fig-align="center"}
 
 ## What does **reticulate** do?
 
@@ -921,7 +955,21 @@ chdir(path)
       If this functionality is unavailable, using it raises an exception.
 ```
 
+## Some more reading
+
 There is also this [University of Chicago article](https://css-skills.uchicago.edu/posts/2022-01-25-introduction-to-r-for-the-python-user/) aimed at Python users who are new to R, as well as an [excellent article](https://rstudio.github.io/reticulate/articles/python_primer.html) aimed at R users who are new to Python.
+
+Your favorite search engine can tell you more too.
+
+## And I'm sure one of you will mention
+
+[rpy2](rpy2.github.io), basically **reticulate** for the Python environment.
+
+. . .
+
+Documentation is not as robust as for **reticulate**, though.
+
+![](assets/r2py-in-the-wild.png){fig-align="center"}
 
 # Session info
 
