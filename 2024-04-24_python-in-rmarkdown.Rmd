@@ -6,7 +6,7 @@ date: "2024-04-24"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-here::i_am("IFFRUG.Rproj")
+here::i_am("2024_reticulate.Rproj")
 ggplot2::theme_set(ggplot2::theme_bw())
 options(tidyverse.quiet = TRUE)
 
@@ -34,7 +34,7 @@ plt.show()
 
 import pandas as pd
 
-flights = pd.read_csv('flights.csv')
+flights = pd.read_csv('extdata/flights.csv')
 flights = flights[flights['dest'] == 'ORD']
 flights = flights[['carrier', 'dep_delay', 'arr_delay']]
 flights = flights.dropna()
@@ -53,7 +53,7 @@ ggplot(py$flights, aes(carrier, arr_delay)) + geom_point() + geom_jitter()
 
 library(tidyverse)
 
-flights <- read_csv("flights.csv", show_col_types = FALSE) %>%
+flights <- read_csv("extdata/flights.csv", show_col_types = FALSE) %>%
   filter(dest == "ORD") %>%
   select(carrier, dep_delay, arr_delay) %>%
   na.omit()

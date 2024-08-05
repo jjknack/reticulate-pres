@@ -68,6 +68,8 @@ include-in-header:
 
 ## Disclaimer
 
+R is my preferred coding language.  All code in this talk, unless specified, is R code.
+
 . . .
 
 I use RStudio as my preferred IDE, and this talk was written from that perspective.
@@ -114,7 +116,7 @@ Because I don't want to.
 
 . . .
 
-I like (and more importantly, ***know***) RStudio. I also don't use Python enough to bother learning VSCode.
+I like (and more importantly, ***know***) RStudio.
 
 # Setup
 
@@ -126,13 +128,9 @@ There are utilities to install and manage Python packages and environments in RS
 
 [^4]: https://rstudio.github.io/reticulate/articles/python_packages.html
 
-. . .
-
-I use `mamba`[^2] for package managment, which works pretty much just like `conda`, except it solves the environment much more quickly because it uses `libsolv` C library instead of Python to solve dependencies.
+I use `mamba`[^2] instead.
 
 [^2]: https://mamba.readthedocs.io/en/latest/index.html
-
-. . .
 
 ## Setting up RStudio to run Python
 
@@ -172,7 +170,7 @@ install.packages("reticulate")
 
 . . .
 
-1.  Allows calling Python from R in multiple ways including from RMarkdown/Quarto, sourcing Python scripts, importing Python modules, and using Python interactively within an R session
+1.  Allows calling Python ***from R*** in multiple ways including from RMarkdown/Quarto, sourcing Python scripts, importing Python modules, and using Python interactively within an R session
 
 . . .
 
@@ -194,7 +192,7 @@ They "strongly suggest" using one of the IDEs available for doing data science i
 
 ::: {.class style="color:grey"}
 
-1.  Allows calling Python from R in multiple ways including from RMarkdown/Quarto, sourcing Python scripts, importing Python modules, and using Python interactively within an R session
+1.  Allows calling Python ***from R*** in multiple ways including from RMarkdown/Quarto, sourcing Python scripts, importing Python modules, and using Python interactively within an R session
 
 2.  Translates between R and Python objects (e.g., between R and Pandas data frames, or between R matrices and NumPy arrays)
 :::
@@ -223,7 +221,7 @@ There is also `use_python()` that allows you to specify an alternative version o
 
 ## What does **reticulate** do?
 
-1.  Allows calling Python from R in multiple ways including from RMarkdown/Quarto, sourcing Python scripts, importing Python modules, and using Python interactively within an R session
+1.  Allows calling Python ***from R*** in multiple ways including from RMarkdown/Quarto, sourcing Python scripts, importing Python modules, and using Python interactively within an R session
 
 ::: {.class style="color:grey"}
 
@@ -291,6 +289,8 @@ builtins$print('Hello, World!')
 Let's say I have a Python script that defines a function:
 
 ```python
+## this is Python code
+
 def add(x,y):
   return x + y
 ```
@@ -308,6 +308,10 @@ add(5,10)
 ## Executing code
 
 Let's say my collaborator wrote a Python script for processing some raw data.  I'd like to work with the processed data in R, but my collaborator only provided me with the raw data and the script.
+
+. . .
+
+I know the script requires a variable `file` that is a character string pointing to the path of the raw data.
 
 ---
 
@@ -392,7 +396,7 @@ There is other support for Python from the Quarto CLI as well, plus a VSCode Qua
 ## What does **reticulate** do?
 
 ::: {.class style="color:grey"}
-1.  Allows calling Python from R in multiple ways including from RMarkdown/Quarto, sourcing Python scripts, importing Python modules, and using Python interactively within an R session
+1.  Allows calling Python ***from R*** in multiple ways including from RMarkdown/Quarto, sourcing Python scripts, importing Python modules, and using Python interactively within an R session
 :::
 
 2.  Translates between R and Python objects (e.g., between R and Pandas data frames, or between R matrices and NumPy arrays)
@@ -401,7 +405,9 @@ There is other support for Python from the Quarto CLI as well, plus a VSCode Qua
 3.  Provides flexible binding to different versions of Python including virtual environments and Conda environments
 :::
 
-## Type conversions
+# Type conversions
+
+---
 
 When calling into Python, R data types are automatically converted to their equivalent Python types.
 
@@ -410,6 +416,10 @@ When calling into Python, R data types are automatically converted to their equi
 When values are returned from Python to R they are converted back to R types.^[https://rstudio.github.io/reticulate/articles/calling_python.html#type-conversions]
 
 . . .
+
+The automatic conversion between R types and Python types works well in most cases, but sometimes you might want more control over the conversions.
+
+## Conversion table
 
 ::: {.custom-small}
 
@@ -426,10 +436,6 @@ When values are returned from Python to R they are converted back to R types.^[h
 | NULL, TRUE, FALSE      | None, True, False | `NULL`, `TRUE`, `FALSE`                          |
 
 :::
-
-## More on object conversion
-
-The automatic conversion between R types and Python types works well in most cases, but sometimes you might want more control over the conversions.
 
 ## Controling when conversion happens
 
@@ -464,6 +470,12 @@ Then when you're done working with the object in Python, you can convert it to a
 # what is sum_r?
 class(sum_r)
 ```
+
+::: {.callout-note}
+
+We'll be using both the `sum_np` and `sum_r` objects in examples later on, so take note of their difference
+
+:::
 
 ## Defining the conversion
 
@@ -553,8 +565,9 @@ sum_np[-1L]
 sum_r[-1]
 ```
 
+# Arrays
 
-## Important points about arrays^[https://rstudio.github.io/reticulate/articles/arrays.html]
+## The TL;DR^[https://rstudio.github.io/reticulate/articles/arrays.html]
 
 R and Python represent arrays and matrices in memory differently:
 
@@ -595,121 +608,7 @@ These are the exact same array:
 :::
 ::::
 
-::: {.aside}
-See appendix for more on porting arrays between R and Python
-:::
-
-## Sparse matrices
-
-**reticulate** supports the conversion of sparse matrices created by the **Matrix** R package to and from SciPy CSC matrices.^[https://rstudio.github.io/reticulate/articles/calling_python.html#sparse-matrices]
-
-. . .
-
-I tried to make an example but working out the dependencies for `scipy.sparse` was way too much work.
-
-. . .
-
-<https://rstudio.github.io/reticulate/articles/python_dependencies.html> may have been helpful but I didn't care enough.
-
-## Important points on data frames
-
-As mentioned earlier, R data frames can be automatically converted to and from Pandas data frames.  By default, columns are converted using the same rules governing R array <=> NumPy array conversion, with a couple extensions:
-
-- R factors <=> Python categorical variables
-- R POSIXt times <=> NumPy array with dtype=`datetime64[ns]`
-
-## Important points on data frames
-
-If the R data frame has row names, the generated Pandas data frame will be re-indexed using those row names, and vice versa.
-
-. . .
-
-If a Pandas data frame has a `DatetimeIndex`, it is converted to character vectors as R only supports character row names.
-
-## Using Pandas nullable data types
-
-Pandas out of the box handles `NA`s differently than R:
-
-:::: {.columns}
-::: {.column width="50%"}
-
-```{r}
-#| echo: true
-#| warning: true
-
-(df <- data.frame(
-  int = c(NA, 1:4),
-  num = c(NA, rnorm(4)),
-  lgl = c(NA, rep(c(TRUE, FALSE), 2)),
-  string = c(NA, letters[1:4])
-))
-```
-
-:::
-
-::: {.column width="50%"}
-
-```{r}
-#| echo: true
-#| warning: true
-
-r_to_py(df)
-```
-
-:::
-::::
-
----
-
-However, Pandas has experimental support for nullable data types (represented by `pd.NA`), but you have to enable it first:
-
-```{r}
-#| echo: true
-#| warning: true
-
-# tell Pandas to use NAs
-options(reticulate.pandas_use_nullable_dtypes = TRUE)
-
-r_to_py(df)
-```
-
-## For advanced Python users
-
-For advanced Python users, there's more documentation on
-
-- Contexts
-- Iterators
-- Functions
-- Creating high-level R interfaces for Python libraries
-
-Check out <https://rstudio.github.io/reticulate/articles/calling_python.html> for deets.
-
-## Access to Python help from R
-
-You can print documentation on any Python object using `py_help()`:
-
-```r
-py_help(os$chdir)
-```
-
-This will open a text document outside of RStudio:
-
-```
-Help on built-in function chdir in module nt:
-
-chdir(path)
-    Change the current working directory to the specified path.
-
-    path may always be specified as a string.
-    On some platforms, path may also be specified as an open file descriptor.
-      If this functionality is unavailable, using it raises an exception.
-```
-
-There is also this [excellent article](https://rstudio.github.io/reticulate/articles/python_primer.html) aimed at R users who are new to Python.
-
-# Appendix
-
-## More on arrays
+## More array considerations
 
 - Dense R arrays are presented to Python as column-major NumPy arrays (FORTRAN-style).
 - *All* NumPy arrays (column-major, row-major, or otherwise) are presented to R as column-major arrays, since that's all R can understand.
@@ -721,24 +620,24 @@ There is also this [excellent article](https://rstudio.github.io/reticulate/arti
 Remember this 2x2x2 array?
 
 :::: {.columns}
-::: {.column width="60%"}
+::: {.column width="50%"}
 
 ```{r}
 #| echo: true
 #| warning: true
 
-(x <- np$arange(1, 9)$reshape(2L, 2L, 2L))
+x
 ```
 
 :::
 
-::: {.column width="40%"}
+::: {.column width="50%"}
 
 ```{r}
 #| echo: true
 #| warning: true
 
-(y <- py_to_r(x))
+y
 ```
 
 :::
@@ -862,7 +761,7 @@ The R `dim()` function is used to reshape arrays in R.  This works by changing t
 
 . . .
 
-Remember though that NumPy uses row-major semantics by default; hence, the `reshape` method uses row-major semantics.
+Remember though that NumPy uses row-major semantics by default; hence, its `reshape` method uses row-major semantics.
 
 ```{r}
 #| echo: true
@@ -910,6 +809,119 @@ array_reshape(1:4, c(2,2))
 
 :::
 ::::
+
+
+## Sparse matrices
+
+**reticulate** supports the conversion of sparse matrices created by the **Matrix** R package to and from SciPy CSC matrices.^[https://rstudio.github.io/reticulate/articles/calling_python.html#sparse-matrices]
+
+. . .
+
+I tried to make an example but working out the dependencies for `scipy.sparse` was way too much work.
+
+. . .
+
+<https://rstudio.github.io/reticulate/articles/python_dependencies.html> may have been helpful but I didn't care enough.
+
+# Data Frames
+
+## The important points
+
+As mentioned earlier, R data frames can be automatically converted to and from Pandas data frames.  By default, columns are converted using the same rules governing R array <=> NumPy array conversion, with a couple extensions:
+
+- R factors <=> Python categorical variables
+- R POSIXt times <=> NumPy array with dtype=`datetime64[ns]`
+
+## The important points
+
+If the R data frame has row names, the generated Pandas data frame will be re-indexed using those row names, and vice versa.
+
+. . .
+
+If a Pandas data frame has a `DatetimeIndex`, it is converted to character vectors as R only supports character row names.
+
+## Using Pandas nullable data types
+
+Pandas out of the box handles `NA`s differently than R:
+
+:::: {.columns}
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+(df <- data.frame(
+  int = c(NA, 1:4),
+  num = c(NA, rnorm(4)),
+  lgl = c(NA, rep(c(TRUE, FALSE), 2)),
+  string = c(NA, letters[1:4])
+))
+```
+
+:::
+
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+r_to_py(df)
+```
+
+:::
+::::
+
+---
+
+However, Pandas has experimental support for nullable data types (represented by `pd.NA`), but you have to enable it first:
+
+```{r}
+#| echo: true
+#| warning: true
+
+# tell Pandas to use NAs
+options(reticulate.pandas_use_nullable_dtypes = TRUE)
+
+r_to_py(df)
+```
+
+# Final Points
+
+## For advanced Python users
+
+For advanced Python users, there's more documentation on
+
+- Contexts
+- Iterators
+- Functions
+- Creating high-level R interfaces for Python libraries
+
+Check out <https://rstudio.github.io/reticulate/articles/calling_python.html> for deets.
+
+## Access to Python help from R
+
+You can print documentation on any Python object using `py_help()`:
+
+```r
+py_help(os$chdir)
+```
+
+This will open a text document outside of RStudio:
+
+```
+Help on built-in function chdir in module nt:
+
+chdir(path)
+    Change the current working directory to the specified path.
+
+    path may always be specified as a string.
+    On some platforms, path may also be specified as an open file descriptor.
+      If this functionality is unavailable, using it raises an exception.
+```
+
+There is also this [University of Chicago article](https://css-skills.uchicago.edu/posts/2022-01-25-introduction-to-r-for-the-python-user/) aimed at Python users who are new to R, as well as an [excellent article](https://rstudio.github.io/reticulate/articles/python_primer.html) aimed at R users who are new to Python.
 
 # Session info
 
