@@ -1,7 +1,7 @@
 # reticulate-pres
 
 ## [Reticulate: When Python and R play nice](https://madpy.com/meetups/2024/8/8/20240808-reticulate-when-python-and-r-play-nice/)
-Presentation on the Reticulate package to [MadPy](madpy.com), 2024-08-08
+Presentation on the Reticulate package to [MadPy](https://madpy.com), 2024-08-08
 
 ![](assets/madpy-logo.svg)
 
@@ -15,4 +15,4 @@ Presentation on the Reticulate package to [MadPy](madpy.com), 2024-08-08
 
 - [assets](assets) contains image files used in the presentation, and [extdata](extdata) contains data sets sourced in both the presentation and the example RMarkdown report.
 
-<img src="assets/ccby.png" width="100px"> This work is licensed under the [Creative Commons Attribution 4.0 International](LICENSE.md) license.
+<img src="assets/ccby.png" width="100px"> This work is licensed under the [Creative Commons Attribution 4.0](LICENSE.md) international license.
