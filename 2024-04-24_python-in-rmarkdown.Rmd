@@ -45,7 +45,7 @@ flights = flights.dropna()
 
 library(ggplot2)
 
-ggplot(py$flights, aes(carrier, arr_delay)) + geom_point() + geom_jitter()
+ggplot(py$flights, aes(carrier, arr_delay)) + geom_jitter()
 ```
 
 ```{r}
