@@ -219,7 +219,7 @@ Do this whether you're working interactively, calling scripts, or authoring repo
 
 . . .
 
-There is also `use_python()` that allows you to specify an alternative version of python other than the one you set in your global options, or `use_virtualenv()` to set a virtual environment instead of a conda environment.
+There is also `reticulate::use_python()` that allows you to specify an alternative version of python other than the one you set in your global options, or `reticulate::use_virtualenv()` to set a virtual environment instead of a conda environment.
 
 ## What does **reticulate** do?
 
@@ -290,7 +290,7 @@ os$listdir(".") |> head()
 
 . . .
 
-If you'd like to access built in Python functions, use `import_builtins()`.
+If you'd like to access built in Python functions, use `reticulate::import_builtins()`.
 
 ```{r}
 #| echo: true
@@ -311,7 +311,7 @@ def add(x,y):
   return x + y
 ```
 
-If I'd like to use that function in R, I can source it using `source_python()`.
+If I'd like to use that function in R, I can source it using `reticulate::source_python()`.
 
 ```{r}
 #| echo: true
@@ -331,7 +331,7 @@ I know the script requires a variable `file` that is a character string pointing
 
 ---
 
-I can use `py_run_string()` and `py_run_file()` to process the data, and then access any objects created into the Python main module using the `py` object exported by **reticulate**:
+I can use `reticulate::py_run_string()` and `reticulate::py_run_file()` to process the data, and then access any objects created into the Python main module using the `py` object exported by **reticulate**:
 
 ```{r}
 #| echo: true
@@ -349,7 +349,7 @@ py$df
 
 ## Working in RMarkdown^[https://rstudio.github.io/reticulate/articles/r_markdown.html]
 
-**reticulate** includes a Python engine for RMarkdown, and **knitr** v 1.18 and higher uses this engine by default.
+**reticulate** includes a Python engine for RMarkdown, and **knitr** v 1.18 (2017) and higher uses this engine by default.
 
 . . .
 
@@ -411,7 +411,7 @@ There is other support for Python from the Quarto CLI as well, plus a VSCode Qua
 
 ## Working with Python interactively
 
-If you want to work with Python interactively, you can call `repl_python()` to initiate a Python REPL embedded in the R console.
+If you want to work with Python interactively, you can call `reticulate::repl_python()` to initiate a Python REPL embedded in the R console.
 
 . . .
 
@@ -473,7 +473,7 @@ The automatic conversion between R types and Python types works well in most cas
 
 ## Controling when conversion happens
 
-If you'd like to work directly with Python objects by default you can pass `convert = FALSE` to the `import()` function.
+If you'd like to work directly with Python objects by default you can pass `convert = FALSE` to the `reticulate::import()` function.
 
 ```{r}
 #| echo: true
@@ -492,7 +492,7 @@ class(sum_np)
 
 ---
 
-Then when you're done working with the object in Python, you can convert it to an R object explicitly with `py_to_r()`.
+Then when you're done working with the object in Python, you can convert it to an R object explicitly with `reticulate::py_to_r()`.
 
 ```{r}
 #| echo: true
@@ -538,7 +538,7 @@ foo$bar(indexes = list(42L))
 Similarly, if the Python API wants a `tuple`, you can use `reticulate::tuple()`:
 
 ```r
-tuple("a", "b", "c")
+tuple("a", 5.5, FALSE)
 ```
 
 . . .
@@ -601,20 +601,137 @@ sum_r[-1]
 
 # Arrays
 
+## Wait, do you mean vectors or matrices?
+
+. . .
+
+![](assets/rlm-yes.gif){fig-align="center" width=700}
+
+---
+
+NumPy uses one type of object, the `ndarray`, for an indexed collection of numbers with any number of dimensions.
+
+```{r}
+#| echo: true
+#| warning: true
+
+sum_np
+class(sum_np)
+```
+
+---
+
+R has multiple types of objects for this.
+
+The R `array` is analogous to the NumPy `ndarray` and can also handle any number of dimensions.
+
+```{r}
+#| echo: true
+#| warning: true
+
+sum_r
+class(sum_r)
+```
+
+---
+
+More commonly, folks will use a **numeric vector** for 1-dimensional indexed collections of numbers.
+
+```{r}
+#| echo: true
+#| warning: true
+
+rnorm(1:4)
+class(rnorm(1:4))
+```
+
+These will be coerced to arrays by R automatically whenever they interact with other arrays mathematically.
+
+---
+
+A `matrix` is a subset of `array` with two dimensions.
+
+```{r}
+#| echo: true
+#| warning: true
+
+matrix(rnorm(1:4),2,2)
+class(matrix(rnorm(1:4),2,2))
+```
+
 ## The TL;DR^[https://rstudio.github.io/reticulate/articles/arrays.html]
 
-R and Python represent arrays and matrices in memory differently:
+R and Python represent 2+ -dimensional arrays in memory differently:
 
 - R only supports column-major order (FORTRAN-style)
 - NumPy supports both column-major and row-major (C-style) order, but defaults to row-major
 
----
+. . .
 
 The most important thing to remember about this is that
 
 **R and Python print arrays differently.**
 
+## Column- vs. Row-Major Order
+
+![Modified from image by Cmglee - Own work, CC BY-SA 4.0, https://commons.wikimedia.org/w/index.php?curid=65107030](assets/Row_and_column_major_order_h.png)
+
+## Reshaping arrays
+
+The R `dim()` function is used to reshape arrays in R.  This works by changing the `dim` attribute of the array, effectively re-interpreting the array indices using column-major semantics.
+
 . . .
+
+Remember though that NumPy uses row-major semantics by default; hence, its `reshape` method uses row-major semantics.
+
+```{r}
+#| echo: true
+#| warning: true
+
+# NumPy reshape uses row-major semantics
+np$reshape(np$arange(1,5), c(2L,2L))
+```
+
+So if you're mixing R and Python code, you may get inconsistent results.
+
+---
+
+To overcome this, use `reticulate::array_reshape()` to reshape R arrays using row-major semantics.
+
+:::: {.columns}
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+# make an array from a vector
+# of 4 elements:
+u <- 1:4
+
+# dim() uses
+# column-major semantics
+dim(u) <- c(2,2)
+u
+```
+
+:::
+
+::: {.column width="50%"}
+
+```{r}
+#| echo: true
+#| warning: true
+
+# array_reshape() uses
+# row-major semantics
+array_reshape(1:4, c(2,2))
+```
+
+:::
+::::
+
+## Grouping while printing 3+D arrays
 
 These are the exact same array:
 
@@ -637,41 +754,6 @@ These are the exact same array:
 #| warning: true
 
 (y <- py_to_r(x))
-```
-
-:::
-::::
-
-## More array considerations
-
-- Dense R arrays are presented to Python as column-major NumPy arrays (FORTRAN-style).
-- *All* NumPy arrays (column-major, row-major, or otherwise) are presented to R as column-major arrays, since that's all R can understand.
-- R arrays are only copied to Python when they need to be, otherwise data are shared.
-- NumPy arrays are *always* copied when moved into R arrays.  This can sometimes lead to multiple copies of any one array in memory at one time.
-
----
-
-Remember this 2x2x2 array?
-
-:::: {.columns}
-::: {.column width="50%"}
-
-```{r}
-#| echo: true
-#| warning: true
-
-x
-```
-
-:::
-
-::: {.column width="50%"}
-
-```{r}
-#| echo: true
-#| warning: true
-
-y
 ```
 
 :::
@@ -789,61 +871,12 @@ np$reshape(np$arange(1, 25), c(4L, 3L, 2L), "F")
 
 You *can* rearrange R arrays into row-major order, but it's gross.
 
-## Reshaping arrays
+## More array considerations
 
-The R `dim()` function is used to reshape arrays in R.  This works by changing the `dim` attribute of the array, effectively re-interpreting the array indices using column-major semantics.
-
-. . .
-
-Remember though that NumPy uses row-major semantics by default; hence, its `reshape` method uses row-major semantics.
-
-```{r}
-#| echo: true
-#| warning: true
-
-# NumPy reshape uses row-major semantics
-np$reshape(np$arange(1,5), c(2L,2L))
-```
-
-So if you're mixing R and Python code, you may get inconsistent results.
-
----
-
-To overcome this, use `reticulate::array_reshape()` to reshape R arrays using row-major semantics.
-
-:::: {.columns}
-::: {.column width="50%"}
-
-```{r}
-#| echo: true
-#| warning: true
-
-# make an array from a vector
-# of 4 elements:
-u <- 1:4
-
-# dim() uses
-# column-major semantics
-dim(u) <- c(2,2)
-u
-```
-
-:::
-
-::: {.column width="50%"}
-
-```{r}
-#| echo: true
-#| warning: true
-
-# array_reshape() uses
-# row-major semantics
-array_reshape(1:4, c(2,2))
-```
-
-:::
-::::
-
+- Dense R arrays are presented to Python as column-major NumPy arrays (FORTRAN-style).
+- *All* NumPy arrays (column-major, row-major, or otherwise) are presented to R as column-major arrays, since that's all R can understand.
+- R arrays are only copied to Python when they need to be, otherwise data are shared.
+- NumPy arrays are *always* copied when moved into R arrays.  This can sometimes lead to multiple copies of any one array in memory at one time.
 
 ## Sparse matrices
 
@@ -921,6 +954,12 @@ options(reticulate.pandas_use_nullable_dtypes = TRUE)
 r_to_py(df)
 ```
 
+::: {.aside}
+
+And yes, I also think this should be enabled by default.
+
+:::
+
 # Final Points
 
 ## For advanced Python users
@@ -936,7 +975,7 @@ Check out <https://rstudio.github.io/reticulate/articles/calling_python.html> fo
 
 ## Access to Python help from R
 
-You can print documentation on any Python object using `py_help()`:
+You can print documentation on any Python object using `reticulate::py_help()`:
 
 ```r
 py_help(os$chdir)
