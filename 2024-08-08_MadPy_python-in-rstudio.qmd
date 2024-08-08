@@ -210,7 +210,7 @@ First thing you *always* want to do is set your environment:
 #| warning: true
 
 library(reticulate)
-use_condaenv("iffrug")
+use_condaenv("madpy")
 ```
 
 . . .
@@ -355,7 +355,7 @@ py$df
 
 Set your environment in your setup chunk:
 
-![](assets/rmarkdown_setupchunk_reticulate.png){fig-align="center"}
+![](assets/rmarkdown_setupchunk_reticulate.png){fig-align="center" width=800}
 
 ::: {.callout-important}
 *Always* call `library(reticulate)` or you won't be able to access the `py` object!
