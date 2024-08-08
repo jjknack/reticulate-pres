@@ -83,7 +83,7 @@ You can just as easily do this all in VSCode.  But please...
 ## Don't use Jupyter Notebooks. {.smaller}
 
 - Hidden states hinder reproduciblity
-  - Cells can be run in any order, any number of times.  According to one study[^1], [73% of all Jupyter notebooks are not reproducible with straightforward approaches.]{.class style="color:red"}
+  - Cells can be run in any order, any number of times -- according to one study[^1], [73% of all Jupyter notebooks are not reproducible with straightforward approaches]{.class style="color:red"}
 - Version control is nearly impossible because Jupyter notebooks are stored as single-line JSON files
   - Merging branches with `git` versioning nearly always breaks because `git` version control works on a line-by-line basis
   - Visualizing and understanding differences between versions is an impossible task
@@ -119,6 +119,74 @@ Because I don't want to.
 . . .
 
 I like (and more importantly, ***know***) RStudio.
+
+## R syntax used in this presentation
+
+Because most (if not all) of you are primarily Python coders, I will introduce some R syntax I use regularly in this presentation.
+
+. . .
+
+1. Package loading
+
+In R, one uses the `library()` function to bind packages to the environment.  One then has access to all the functions and/or data in that package.
+
+```r
+library(dplyr)
+```
+
+---
+
+However, one can also access individual functions from a package using `::` syntax.
+
+```r
+dplyr::filter(df, col1 == "value")
+```
+
+This tells R which namespace to grab the function from without loading the whole package into the environment.
+
+. . .
+
+Throughout this talk, I will introduce new **reticulate** R functions in presentation text with `::` syntax, but I will not use that syntax in code chunks since I will have already called `library(reticulate)`.
+
+---
+
+2. Piping
+
+Pipes are used to "pipe" the output from one function as the first input into another function.  The original pipe in R was `%>%` from the **magrittr** package (also included in **dplyr** from the Tidyverse).  For example:
+
+```r
+library(dplyr)
+
+df %>%
+  filter(col1 == "value") %>%
+  select(col2)
+```
+
+. . .
+
+Starting in R v4.1.0 (2021), base R now has a native pipe `|>`, also called a "beak", that works similarly to the **magrittr** `%>%`.
+
+I prefer `%>%`.  Ask Derek why he prefers `|>`.
+
+---
+
+3. Assignment
+
+While one can use `=` for assignment to new objects, the `<-` is almost always used instead.
+
+```{r}
+#| echo: true
+#| warning: true
+
+hi <- "Hello, world!"
+print(hi)
+```
+
+. . .
+
+4. Indexing
+
+R uses base-1 indexing.  More on this later.
 
 # Setup
 
@@ -365,7 +433,9 @@ Set your environment in your setup chunk:
 
 Then you can start inserting Python chunks just like you would R chunks, and **knitr** will knit everything together:
 
-![](assets/rmarkdown_pychunk.png){fig-align="center"}
+![](assets/rmarkdown_pychunk1.png){.absolute right=530 top=275 width=550}
+
+![](assets/rmarkdown_pychunk2.png){.absolute left=530 top=185 width=550}
 
 ---
 
@@ -381,15 +451,33 @@ And you can access objects created in R chunks in Python by using the `r` object
 
 ## Working in Quarto
 
-Quarto provides all the support for Python that RMarkdown does, plus support for Jupyter:
+Quarto is an updated version of RMarkdown that is designed for a broader user base than just R users.  I pretty much exclusively work in Quarto rather than RMarkdown these days.
 
 . . .
 
-- Quarto supports rendering with the Jupyter kernel in addition to **knitr** and **reticulate** -- just put `jupyter: python3` in your YAML header and make sure the paths to Python and Jupyter are in your `PATH`.
+Quarto provides all the support for Python that RMarkdown does, plus support for Jupyter.
+
+::: {.aside}
+
+This doesn't really have anything to do with **reticulate**; I just thought y'all might find it interesting and useful.
+
+:::
+
+---
+
+- Quarto supports rendering with the Jupyter kernel in addition to **knitr** and **reticulate** -- just put `jupyter: python3` in your YAML header and make sure the paths to Python and Jupyter are in your `PATH`:
+
+```yaml
+---
+title: "My Document"
+jupyter: python3
+---
+```
 
 ---
 
 - You can also provide a full `kernelspec` in your YAML:
+
 ```yaml
 ---
 title: "My Document"
@@ -425,7 +513,7 @@ REPL stands for "Read-Eval-Print Loop"
 
 ---
 
-![](assets/repl_python.png){fig-align="center"}
+![](assets/repl_python.png)
 
 ## What does **reticulate** do?
 
@@ -457,7 +545,7 @@ The automatic conversion between R types and Python types works well in most cas
 
 ::: {.custom-small}
 
-| R                      | Python            | Examples                                         |
+| R                      | Python            | Examples in R                                         |
 |:-----------------------|:------------------|:-------------------------------------------------|
 | Single-element vector  | Scalar            | `1`, `1L`, `TRUE`, `"foo"`                       |
 | Multi-element vector   | List              | `c(1.0, 2.0, 3.0)`, `c(1L, 2L, 3L)`              |
@@ -492,7 +580,7 @@ class(sum_np)
 
 ---
 
-Then when you're done working with the object in Python, you can convert it to an R object explicitly with `reticulate::py_to_r()`.
+Then when you're done working with the object in Python, you can convert it to an R object explicitly with `reticulate::py_to_r()` (and conversely, `reticulate::r_to_py()`).
 
 ```{r}
 #| echo: true
@@ -527,7 +615,7 @@ class(42L)
 
 ---
 
-If a Python API requires a list but you're only passing it a single element, you can wrap it in base `list()`:
+If a Python API requires a list but you're only passing it a single element, you can wrap it in `list()` from base R:
 
 ```r
 foo$bar(indexes = list(42L))
@@ -659,7 +747,7 @@ matrix(rnorm(1:4),2,2)
 class(matrix(rnorm(1:4),2,2))
 ```
 
-## The TL;DR^[https://rstudio.github.io/reticulate/articles/arrays.html]
+## The TL;DR for arrays^[https://rstudio.github.io/reticulate/articles/arrays.html]
 
 R and Python represent 2+ -dimensional arrays in memory differently:
 
@@ -668,9 +756,11 @@ R and Python represent 2+ -dimensional arrays in memory differently:
 
 . . .
 
-The most important thing to remember about this is that
+::: {.callout-important title="WARNING"}
 
-**R and Python print arrays differently.**
+This can really mess everything up if you're not careful!
+
+:::
 
 ## Column- vs. Row-Major Order
 
@@ -680,7 +770,19 @@ The most important thing to remember about this is that
 
 The R `dim()` function is used to reshape arrays in R.  This works by changing the `dim` attribute of the array, effectively re-interpreting the array indices using column-major semantics.
 
-. . .
+```{r}
+#| echo: true
+#| warning: true
+
+# make an array from a vector of 4 elements:
+u <- 1:4
+
+# dim() uses column-major semantics
+dim(u) <- c(2,2)
+u
+```
+
+---
 
 Remember though that NumPy uses row-major semantics by default; hence, its `reshape` method uses row-major semantics.
 
@@ -761,7 +863,7 @@ These are the exact same array:
 
 . . .
 
-These are the exact same array, so why do they look different?
+So why do they look different?
 
 ---
 
@@ -774,7 +876,6 @@ Python groups by the first index when printing, while R groups by the last index
 #| echo: true
 #| warning: true
 
-x
 x[0L,,]
 x[,,0L]
 ```
@@ -787,13 +888,68 @@ x[,,0L]
 #| echo: true
 #| warning: true
 
-y
 y[1,,]
 y[,,1]
 ```
 
 :::
 ::::
+
+---
+
+This is analogous to slicing a cube along each of its axis planes:
+
+![](assets/3D-indices.png){fig-align="center"}
+
+---
+
+Python slices at the first index:
+
+:::: {.columns}
+::: {.column width="40%"}
+
+![](assets/3D-indices-1.png){fig-align="right"}
+
+:::
+
+::: {.column width="60%"}
+
+```{r}
+#| echo: true
+
+x
+```
+
+:::
+::::
+
+---
+
+R slices at the last index:
+
+:::: {.columns}
+::: {.column width="40%"}
+
+![](assets/3D-indices-3.png){fig-align="right"}
+
+:::
+
+::: {.column width="60%"}
+
+```{r}
+#| echo: true
+
+y
+```
+
+:::
+::::
+
+::: {.callout-note}
+
+The printout looks different from the cube because the cube is using row-major order, while the R array uses column-major order.  The grouping is the same, though!
+
+:::
 
 ## What about arrays from R to Python?
 
@@ -806,7 +962,7 @@ In the previous example I created an array in Python and ported it to R.  What a
 #| echo: true
 #| warning: true
 
-(v <- array(1:24, c(4, 3, 2)))
+(v <- array(1:8, c(2, 2, 2)))
 ```
 
 :::
@@ -850,7 +1006,7 @@ You can always create NumPy arrays in column-major order by passing the `"F"` fl
 #| echo: true
 #| warning: true
 
-np$reshape(np$arange(1, 25), c(4L, 3L, 2L))
+np$reshape(np$arange(1, 9), c(2L, 2L, 2L))
 ```
 
 :::
@@ -861,7 +1017,7 @@ np$reshape(np$arange(1, 25), c(4L, 3L, 2L))
 #| echo: true
 #| warning: true
 
-np$reshape(np$arange(1, 25), c(4L, 3L, 2L), "F")
+np$reshape(np$arange(1, 9), c(2L, 2L, 2L), "F")
 ```
 
 :::
@@ -869,14 +1025,36 @@ np$reshape(np$arange(1, 25), c(4L, 3L, 2L), "F")
 
 . . .
 
-You *can* rearrange R arrays into row-major order, but it's gross.
+You *can* rearrange R arrays into row-major order:
+
+```{r}
+#| echo: true
+
+matrix(1:4, 2, 2, byrow = TRUE)
+```
+
+However, it's much more difficult with 3+ dimensions.
 
 ## More array considerations
 
-- Dense R arrays are presented to Python as column-major NumPy arrays (FORTRAN-style).
-- *All* NumPy arrays (column-major, row-major, or otherwise) are presented to R as column-major arrays, since that's all R can understand.
-- R arrays are only copied to Python when they need to be, otherwise data are shared.
-- NumPy arrays are *always* copied when moved into R arrays.  This can sometimes lead to multiple copies of any one array in memory at one time.
+- Dense R arrays are presented to Python as column-major NumPy arrays (FORTRAN-style)
+- *All* NumPy arrays (column-major, row-major, or otherwise) are presented to R as column-major arrays, since that's all R can understand
+- R arrays are only copied to Python when they need to be, otherwise data are shared
+- NumPy arrays are *always* copied when moved into R arrays; this can sometimes lead to multiple copies of any one array in memory at one time
+
+## So in summary:
+
+. . .
+
+- 2+ -dimensional arrays are created in row-major order by default in NumPy and column-major order in R
+
+. . .
+
+- 3+ -dimensional arrays are printed by slicing by the first index in NumPy and by slicing by the last index in R
+
+. . .
+
+Therefore, I suggest you manipulate your arrays *either* in NumPy *or* in R to avoid catastrophe.
 
 ## Sparse matrices
 
@@ -996,7 +1174,9 @@ chdir(path)
 
 ## Some more reading
 
-There is also this [University of Chicago article](https://css-skills.uchicago.edu/posts/2022-01-25-introduction-to-r-for-the-python-user/) aimed at Python users who are new to R, as well as an [excellent article](https://rstudio.github.io/reticulate/articles/python_primer.html) aimed at R users who are new to Python.
+There is also this [excellent article](https://rstudio.github.io/reticulate/articles/python_primer.html) aimed at R users who are new to Python.
+
+There is less available for the Python user who is new to R, but here's a [couple](https://medium.com/@nawazahmad20/r-for-python-programmers-part-1-ca4eab668b8c) [articles](https://people.bath.ac.uk/jjf23/Python/Rcomparison.html) to get you started.
 
 Your favorite search engine can tell you more too.
 
@@ -1036,5 +1216,9 @@ py_config()
 #| echo: true
 #| warning: true
  
-py_list_packages("iffrug")
+py_list_packages("madpy")
 ```
+
+---
+
+Presentation repo: <https://github.com/jjknack/reticulate-pres>
